@@ -57,3 +57,24 @@ Você pode utilizar as seguintes perguntas durante a interação com o chatbot p
 
 # Justificativa da memória
 Gerenciamento de memória de curto prazo (buffer) em pipeline iterativa de chatbot | Motivo: Utilização de uma instância de buffer para reter o histórico conversacional e injetá-lo dinamicamente nas etapas de análise e refinamento da consulta, permitindo que o modelo compreenda o contexto prévio de interações encadeadas | Publico-Alvo: Desenvolvedores e engenheiros de IA focados em otimização de arquiteturas RAG/LLM. | Efeito no custo de tokens: O histórico acumulado na janela de contexto cresce progressivamente a cada interação, aumentando linearmente o consumo total de tokens por requisição e evidenciando fenômenos de degradação de qualidade (context rot) quando submetido a janelas extensas.
+
+---
+
+## Comparativo Configurações de Chunck Size
+
+### === COMPARAÇÃO DE CONFIGURAÇÕES DO RECURSIVE CHARACTER TEXT SPLITTER ===
+
+Testando: Configuração A (Chunks menores)<br>
+-> chunk_size: 300 | chunk_overlap: 30<br>
+-> Total de chunks gerados: 8<br>
+-> Exemplo do primeiro chunk:<br>
+"O Fierljeppen é um esporte tradicional e de alto rendimento originário da província da Frísia, localizada no norte dos Países Baixos...."
+
+--- 
+
+Testando: Configuração B (Chunks maiores)<br>
+-> chunk_size: 600 | chunk_overlap: 90<br>
+-> Total de chunks gerados: 4<br>
+-> Exemplo do primeiro chunk:<br>
+"O Fierljeppen é um esporte tradicional e de alto rendimento originário da província da Frísia, localizada no norte dos Países Baixos. 
+Historicamente ..."
