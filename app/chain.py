@@ -47,6 +47,8 @@ prompt_relatorio = ChatPromptTemplate.from_template(TEMPLATE_RELATORIO + "\n\n{f
 parser_relatorio = PydanticOutputParser(pydantic_object=RelatorioSessao)
 chain_relatorio = prompt_relatorio | llm | parser_relatorio
 
+
+# Gerar resposta para avaliar o context rot
 prompt_resposta_template = PromptTemplate(
     template="""Você é um assistente especializado no esporte Fierljeppen.
     
@@ -91,7 +93,7 @@ def executar_chatbot():
     rascunho_atual = ""
     motivo_correcao = ""
 
-
+    # Faz a avaliação da resposta, e caso não seja aceita faz outra tentativas (até 3)
     while not aprovado and tentativas < max_tentativas:
         tentativas += 1
         print(f"\n--- Tentativa {tentativas} de {max_tentativas} ---")
@@ -140,27 +142,31 @@ def executar_chatbot():
         else:
             print(f"Reprovada. Motivo: {motivo_correcao}")
     
+    # Gera a resposta final do LLM
     resposta_final = chain_melhoria_resposta.invoke({
         'resposta_atual': rascunho_atual,
         'format_instructions': parser_melhoria_resposta.get_format_instructions()
     })
     
+    # Adiciona a resposta á memória
     memoria_buffer.save_context(
         {"input": pergunta_usuario},
         {"output": resposta_final.resposta_melhorada}
     )
     
+    # Gera o relatorio final 
     relatorio = chain_relatorio.invoke({
         'pergunta': pergunta_usuario,
         'resposta': resposta_final,
         'format_instructions': parser_relatorio.get_format_instructions()
     })
 
-    
+    # Gera um comparativo de tokens do rascunho e da resposta aprimorada
     tokens_rascunho = contar_tokens(rascunho_atual)
     tokens_final = contar_tokens(resposta_final.resposta_melhorada)
     diferenca_tokens = tokens_final - tokens_rascunho
     
+    # Apresenta a resposta final do LLM
     print("\n" + "=".center(50, "="))
     print(" RESPOSTA FINAL DO CHATBOT ".center(50, "="))
     print("=".center(50, "="))

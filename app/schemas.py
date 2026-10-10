@@ -1,6 +1,7 @@
 from pydantic import BaseModel, Field, field_validator
 from typing import Optional, List
 
+# Analisa e entende a pergunta do usuário
 class AnaliseConsulta(BaseModel):
     pergunta: str = Field(
         description='Entender a intenção principal do usuário'
@@ -20,11 +21,13 @@ class AnaliseConsulta(BaseModel):
         return v.strip()
     
 
+# Gera um relatorio sobre a respoista do chatbot
 class RelatorioSessao(BaseModel):
     resposta: str = Field(
         description='Faça um relátorio final sobre a resposta do chatbot'
         )
 
+# Formula a resposta do chatbot
 class RespostaChat(BaseModel):
     nome_esporte: str = Field(
         description="Nome do esporte identificado, deve ser estritamente 'Fierljeppen'."
@@ -57,6 +60,7 @@ class RespostaChat(BaseModel):
             raise ValueError("O rascunho da resposta é muito curto ou inválido.")
         return v
 
+# Avalia a resposta do chatbot
 class AvaliarResposta(BaseModel):
     aprovado: bool = Field(
         description="True se a resposta estiver 100% correta, fiel aos fatos do Fierljeppen e sem alucinações. False caso contrário."
@@ -72,6 +76,7 @@ class AvaliarResposta(BaseModel):
             raise ValueError("A resposta melhorada precisa conter conteúdo descritivo válido.")
         return v
 
+# Melhora a resposta final
 class MetaPrompt(BaseModel):
     resposta_melhorada: str = Field(description="A versão reescrita, corrigida e polida da resposta, eliminando todos os erros apontados pelo juiz e mantendo o tom adequado.")
 
