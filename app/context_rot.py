@@ -1,95 +1,71 @@
-from chain import contar_tokens, chain_analise, parser_analise, chain_resposta, parser_resposta, chain_avaliacao, parser_avaliacao, chain_melhoria_resposta, parser_melhoria_resposta
-from memory_manager import memoria_buffer
+from chain import contar_tokens, chain_resposta, parser_resposta, chain_avaliacao, parser_avaliacao, chain_resposta_context_rot
+# Ignoramos a chain_analise e a memoria_buffer aqui para testar o LLM puro!
 
-pergunta_teste = "Explique detalhadamente as regras e a história do Fierljeppen."
+def testar_degradacao_contexto():
+    pergunta_direta = "Com base EXCLUSIVAMENTE no histórico fornecido, quais foram as 3 especificações exatas descritas sobre a vara de salto?"
 
-# Definindo os cenários baseados em turnos de conversação (0, 5, 10, 15, 20)
-turnos_teste = [0, 5, 10, 15, 20]
-resultados_tabela = []
+    # Texto de ruído MASSIVO (Simulando artigos extensos)
+    bloco_ruido = """
+    A história da Frísia remonta à época dos antigos germânicos. Os frísios eram conhecidos por sua resistência e adaptação ao meio ambiente costeiro. 
+    A região é repleta de canais, o que tornou o uso de varas para salto de canais (Fierljeppen) uma necessidade prática antes de virar esporte.
+    O sistema agrícola local baseava-se na pecuária leiteira, produção de queijos e navegação comercial entre as ilhas do Mar dos Wadden.
+    """ * 10  # ~500 tokens por bloco
 
-print("=== INICIANDO TESTE DE DEGRADAÇÃO DE CONTEXTO (POR TURNOS) ===")
+    # Escala de teste atingindo volumes realmente grandes
+    cenarios_turnos = [0, 10, 50, 100, 200] 
+    resultados = []
 
-for turnos in turnos_teste:
-    print(f"\n--- Testando cenário: {turnos} turnos de histórico ---")
-    
-    # 1. Limpa a memória
-    memoria_buffer.clear()
-    
-    # 2. Gera o histórico simulado dinamicamente com base na quantidade de turnos
-    historico_acumulado = ""
-    if turnos > 0:
-        bloco_conversa = "Usuário: Fale mais sobre a cultura da Frísia.\nIA: A Frísia possui rica tradição em esportes aquáticos e folclore local...\n"
-        historico_acumulado = bloco_conversa * turnos
-        memoria_buffer.save_context({"input": "Início do histórico simulado"}, {"output": historico_acumulado})
+    print("=== TESTE DE DEGRADAÇÃO ISOLADO (ESTRESSE DE ATENÇÃO) ===")
 
-    # Pega o histórico formatado para injetar na chain
-    historico_atual = memoria_buffer.load_memory_variables({})['history']
-    total_tokens_contexto = contar_tokens(str(historico_atual))
-    
-    print(f"Janela de tokens injetada: ~{total_tokens_contexto} tokens")
-    print(f"Enviando prompt fixo: '{pergunta_teste}'...")
+    for turnos in cenarios_turnos:
+        # 1. Montamos o histórico do zero na mão (sem filtros do LangChain)
+        historico_list = []
+        
+        # AGULHA: Colocamos a informação importante no INÍCIO (onde o esquecimento é mais comum em contextos longos)
+        historico_list.append(
+            "Usuário: Quais são as especificações secretas da vara de salto?\n"
+            "IA: As especificações são: 1) Feita de liga de alumínio e carbono. "
+            "2) Diâmetro máximo de 15 centímetros. 3) Topo possui uma placa plana de polímero verde."
+        )
 
-    # 3. Executa a análise da pergunta considerando o contexto
-    analise = chain_analise.invoke({
-        'pergunta': pergunta_teste,
-        'history': historico_atual,
-        'format_instructions': parser_analise.get_format_instructions()
-    })
-    pergunta_processada = analise.pergunta 
+        # RUÍDO MASSIVO: Adicionamos blocos enormes de texto
+        for i in range(turnos):
+            historico_list.append(f"Usuário: Me conte mais sobre a história {i}.\nIA: {bloco_ruido}")
 
-    # 4. Roda o loop do Juiz e conta as tentativas
-    tentativas = 1
-    max_tentativas = 3
-    aprovado = False
+        historico_texto = "\n\n".join(historico_list)
+        total_tokens = contar_tokens(historico_texto)
 
-    while not aprovado and tentativas <= max_tentativas:
-        rascunho_atual = chain_resposta.invoke({
-            'pergunta': pergunta_processada, 
+        print(f"\n--- Cenário: {turnos} blocos (~{total_tokens} tokens) ---")
+
+        # 2. Chamamos a chain_resposta DIRETAMENTE sem passar pela chain_analise
+        rascunho = chain_resposta_context_rot.invoke({
+            'pergunta': pergunta_direta,
+            'history': historico_texto,
             'format_instructions': parser_resposta.get_format_instructions()
         }).rascunho_resposta
 
+        print(f"Rascunho Gerado:\n{rascunho[:150]}...") # Imprime o início da resposta
+
+        # 3. Avaliação Estrita
         avaliacao = chain_avaliacao.invoke({
-            'pergunta': pergunta_processada, 
-            'rascunho': rascunho_atual,
+            'pergunta': pergunta_direta,
+            'rascunho': rascunho,
+            'history': historico_texto,
             'format_instructions': parser_avaliacao.get_format_instructions()
         })
 
-        aprovado = avaliacao.aprovado
-        if not aprovado:
-            tentativas += 1
-        else:
-            break
+        status = "✅ Aprovado" if avaliacao.aprovado else "❌ Degradou"
+        print(f"Parecer do Juiz: {avaliacao.motivo}")
+        print(f"Status: {status}")
 
-    # 5. Gera a resposta final aprimorada
-    resposta_final = chain_melhoria_resposta.invoke({
-        'pergunta': pergunta_processada,
-        'resposta_atual': rascunho_atual,
-        'feedback': avaliacao.motivo,
-        'format_instructions': parser_melhoria_resposta.get_format_instructions()
-    })
+        resultados.append({
+            "turnos": turnos,
+            "tokens": total_tokens,
+            "status": status
+        })
 
-    status_str = "✅ Aprovado" if aprovado else "❌ Degradou"
-    
-    # Armazena os dados para a tabela final
-    resultados_tabela.append({
-        "turnos": turnos,
-        "tokens": total_tokens_contexto,
-        "tentativas": tentativas,
-        "status": status_str
-    })
-
-    print(f"-> Tentativas do Juiz: {tentativas} | Status: {status_str}")
-
-# ==========================================
-# EXIBIÇÃO DA TABELA COMPARATIVA FINAL
-# ==========================================
-print("\n" + "=".center(65, "="))
-print(" TABELA RESUMO: DEGRADAÇÃO DE QUALIDADE POR TURNOS ".center(65, "="))
-print("=".center(65, "="))
-print(f"{'Turnos':<10} | {'Tokens Contexto':<15} | {'Tent. Juiz':<12} | {'Status':<12}")
-print("-" * 65)
-
-for r in resultados_tabela:
-    print(f"{r['turnos']:<10} | {r['tokens']:<15} | {r['tentativas']:<12} | {r['status']:<12}")
-
-print("=" * 65)
+    # Tabela Final
+    print("\n" + "="*50)
+    for r in resultados:
+        print(f"Tokens: {r['tokens']:<10} | Status: {r['status']}")
+    print("="*50)

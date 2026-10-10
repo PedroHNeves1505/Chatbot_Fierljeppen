@@ -1,5 +1,5 @@
 from langchain_ollama import ChatOllama
-from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.prompts import ChatPromptTemplate, PromptTemplate
 from langchain_core.output_parsers import PydanticOutputParser
 from prompts import TEMPLATE_ANALISE, TEMPLATE_RELATORIO, TEMPLATE_RESPOSTA, TEMPLATE_JUIZ, TEMPLATE_MELHORIA_RESPOSTA
 from schemas import AnaliseConsulta, RelatorioSessao, RespostaChat, AvaliarResposta, MetaPrompt
@@ -46,6 +46,25 @@ chain_melhoria_resposta = prompt_melhoria_resposta | llm | parser_melhoria_respo
 prompt_relatorio = ChatPromptTemplate.from_template(TEMPLATE_RELATORIO + "\n\n{format_instructions}")
 parser_relatorio = PydanticOutputParser(pydantic_object=RelatorioSessao)
 chain_relatorio = prompt_relatorio | llm | parser_relatorio
+
+prompt_resposta_template = PromptTemplate(
+    template="""Você é um assistente especializado no esporte Fierljeppen.
+    
+Utilize o histórico de conversa abaixo para responder à pergunta do usuário:
+
+HISTÓRICO:
+{history}
+
+PERGUNTA:
+{pergunta}
+
+{format_instructions}
+""",
+    input_variables=["history", "pergunta"], # <-- 'history' precisa estar aqui
+    partial_variables={"format_instructions": parser_resposta.get_format_instructions()}
+)
+
+chain_resposta_context_rot = prompt_resposta_template | llm | parser_resposta
 
 
 # Arquitetura de 2 chain que analisa a pergunta do usuário  e gera uma resposta pro chatbot
