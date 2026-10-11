@@ -68,13 +68,6 @@ class AvaliarResposta(BaseModel):
     motivo: str = Field(
         description="Justifique a aprovação ou, se reprovado, detalhe exatamente quais erros, imprecisões ou fugas do tema Fierljeppen a resposta contém para que possam ser corrigidos."
     )
-    
-    @field_validator('resposta_melhorada')
-    @classmethod
-    def validar_resposta_melhorada(cls, v: str) -> str:
-        if not v or len(v.strip()) < 10:
-            raise ValueError("A resposta melhorada precisa conter conteúdo descritivo válido.")
-        return v
 
 # Melhora a resposta final
 class MetaPrompt(BaseModel):

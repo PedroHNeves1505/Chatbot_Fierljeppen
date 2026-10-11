@@ -1,4 +1,4 @@
-from chain import contar_tokens, chain_resposta, parser_resposta, chain_avaliacao, parser_avaliacao, chain_resposta_context_rot
+from chain import contar_tokens, parser_resposta, chain_avaliacao, parser_avaliacao, chain_resposta_context_rot
 # Ignoramos a chain_analise e a memoria_buffer aqui para testar o LLM puro!
 
 def testar_degradacao_contexto():

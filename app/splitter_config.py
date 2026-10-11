@@ -1,6 +1,8 @@
+import os
+from langchain_community.document_loaders import PyPDFDirectoryLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
-# Texto base de exemplo sobre o Fierljeppen
+# Texto base de exemplo sobre o Fierljeppen (usado como fallback se não houver PDFs)
 TEXTO_FIERLJEPPEN = """
 O Fierljeppen é um esporte tradicional e de alto rendimento originário da província da Frísia, localizada no norte dos Países Baixos. 
 Historicamente desenvolvido em uma região caracterizada por uma complexa rede de canais, valas de drenagem e terras reclaimed (polders), o esporte nasceu da pura necessidade prática de locomoção. 
@@ -14,43 +16,33 @@ Com a criação de federações dedicadas, como a Nationaal Fierljeppen Bond (PB
 """
 
 def comparar_splitters():
-    print("=== COMPARAÇÃO DE CONFIGURAÇÕES DO RECURSIVE CHARACTER TEXT SPLITTER ===\n")
+    print("=== CONFIGURAÇÃO DO RECURSIVE CHARACTER TEXT SPLITTER ===\n")
     
-    # Definindo as 2 configurações obrigatórias (chunk_overlap entre 10-15%)
-    # Configuração 1: Chunk Size = 300 | Overlap = 30 (10%)
-    # Configuração 2: Chunk Size = 600 | Overlap = 90 (15%)
-    configuracoes = [
-        {"chunk_size": 300, "chunk_overlap": 30, "nome": "Configuração A (Chunks menores)"},
-        {"chunk_size": 600, "chunk_overlap": 90, "nome": "Configuração B (Chunks maiores)"}
-    ]
-    
-    resultados_documentados = []
+    caminho_dados = "data"
+    if not os.path.exists(caminho_dados):
+        os.makedirs(caminho_dados, exist_ok=True)
+        print(f"A pasta '{caminho_dados}' foi criada. Coloque seus PDFs do Fierljeppen nela!")
 
-    for config in configuracoes:
-        print(f"Testando: {config['nome']}")
-        print(f"-> chunk_size: {config['chunk_size']} | chunk_overlap: {config['chunk_overlap']}")
-        
-        # Instancia o splitter com os parâmetros exigidos pelo professor
-        splitter = RecursiveCharacterTextSplitter(
-            chunk_size=config["chunk_size"],
-            chunk_overlap=config["chunk_overlap"],
-            separators=["\n\n", "\n", ". ", " ", ""]
-        )
-        
+    # Instancia o splitter com os parâmetros exigidos (chunk_size=500 e overlap=75)
+    splitter = RecursiveCharacterTextSplitter(
+        chunk_size=500,
+        chunk_overlap=75,
+        length_function=len
+    )
+
+    # Tenta carregar os arquivos PDF do diretório
+    loader = PyPDFDirectoryLoader(caminho_dados)
+    documentos = loader.load()
+
+    if not documentos:
+        print(f"Aviso: Nenhum PDF encontrado em '{caminho_dados}/'. Utilizando o texto de exemplo (TEXTO_FIERLJEPPEN).")
         chunks = splitter.split_text(TEXTO_FIERLJEPPEN)
-        
-        print(f"-> Total de chunks gerados: {len(chunks)}")
-        print(f"-> Exemplo do primeiro chunk:\n\"{chunks[0][:150]}...\"")
-        print("-" * 60)
-        
-        resultados_documentados.append({
-            "config": config["nome"],
-            "chunk_size": config["chunk_size"],
-            "chunk_overlap": config["chunk_overlap"],
-            "total_chunks": len(chunks)
-        })
-        
-    return resultados_documentados
+    else:
+        print(f"1. LOAD: {len(documentos)} documentos/páginas carregados com sucesso dos PDFs.")
+        chunks = splitter.split_documents(documentos)
+    
+    print(f"2. SPLIT: Conteúdo dividido em {len(chunks)} chunks.")
+    return chunks
 
 if __name__ == "__main__":
     comparar_splitters()
