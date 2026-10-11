@@ -34,7 +34,7 @@ pip install -r requirements.txt
 Para iniciar a pipeline interativa do chatbot baseada no domínio do Fierljeppen, execute o arquivo principal (main.py ou o script que aciona a função executável):
 
 ```bash
-python app/main.py
+python app
 ```
 
 ## 3. Verificando a Degradação de Contexto (Context Rot)
