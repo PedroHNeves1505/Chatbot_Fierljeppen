@@ -78,3 +78,50 @@ Testando: Configuração B (Chunks maiores)<br>
 -> Exemplo do primeiro chunk:<br>
 "O Fierljeppen é um esporte tradicional e de alto rendimento originário da província da Frísia, localizada no norte dos Países Baixos. 
 Historicamente ..."
+
+
+---
+
+## Relátorio RAGAS
+
+=== INICIANDO AVALIAÇÃO MANUAL DE RAG (CHUNKING COMPARATIVO) ===
+
+==================================================
+ CONFIGURAÇÃO 1: chunk_size=300, overlap=45
+==================================================
+Q1: Faithfulness=1.0 | Answer Relevancy=1.0
+Q2: Faithfulness=1.0 | Answer Relevancy=1.0
+Q3: Faithfulness=1.0 | Answer Relevancy=1.0
+Q4: Faithfulness=1.0 | Answer Relevancy=1.0
+Q5: Faithfulness=1.0 | Answer Relevancy=1.0
+
+--- MÉDIAS DA CONFIGURAÇÃO 1 ---
+Média Faithfulness: 1.00
+Média Answer Relevancy: 1.00
+
+==================================================
+ CONFIGURAÇÃO 2: chunk_size=500, overlap=75
+==================================================
+Q1: Faithfulness=1.0 | Answer Relevancy=1.0
+Q2: Faithfulness=1.0 | Answer Relevancy=1.0
+Q3: Faithfulness=1.0 | Answer Relevancy=1.0
+Q4: Faithfulness=1.0 | Answer Relevancy=1.0
+Q5: Faithfulness=1.0 | Answer Relevancy=1.0
+
+--- MÉDIAS DA CONFIGURAÇÃO 2 ---
+Média Faithfulness: 1.00
+Média Answer Relevancy: 1.00
+
+==================================================
+ CONFIGURAÇÃO 3: chunk_size=800, overlap=100
+==================================================
+Q1: Faithfulness=1.0 | Answer Relevancy=1.0
+Q2: Faithfulness=1.0 | Answer Relevancy=0.0
+Q3: Faithfulness=1.0 | Answer Relevancy=1.0
+Q4: Faithfulness=1.0 | Answer Relevancy=1.0
+Q5: Faithfulness=1.0 | Answer Relevancy=1.0
+
+--- MÉDIAS DA CONFIGURAÇÃO 3 ---
+Média Faithfulness: 1.00
+Média Answer Relevancy: 0.80
+(venv) PS C:\Users\pedri\Chatbot_Fierljeppen> 
